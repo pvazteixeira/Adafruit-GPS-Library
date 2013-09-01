@@ -31,7 +31,8 @@ boolean Adafruit_GPS::parse(char *nmea) {
   // do checksum check
 
   // first look if we even have one
-  if (nmea[strlen(nmea)-4] == '*') {
+  if (nmea[strlen(nmea)-4] == '*') 
+  {
     uint16_t sum = parseHex(nmea[strlen(nmea)-3]) * 16;
     sum += parseHex(nmea[strlen(nmea)-2]);
     
@@ -46,6 +47,7 @@ boolean Adafruit_GPS::parse(char *nmea) {
   }
 
   // look for a few common sentences
+
   if (strstr(nmea, "$GPGGA")) {
     // found GGA
     char *p = nmea;
@@ -93,6 +95,39 @@ boolean Adafruit_GPS::parse(char *nmea) {
     p = strchr(p, ',')+1;
     p = strchr(p, ',')+1;
     geoidheight = atof(p);
+    return true;
+  }
+  if (strstr(nmea, "$GPGSA")) 
+  {
+    // found GSA
+    char* p= nmea;
+    p = strchr(p,',')+1;
+    if('A'==p[0])
+    {
+      fix_dim_auto = true;
+    }
+    else
+    {
+      fix_dim_auto = false;
+    }
+
+    p = strchr(p, ',')+1;
+    fix_dim = (uint8_t)atoi(p);
+
+    // skip PRN of SVs
+    for(int i = 0; i <= 12; i++)
+    {
+      p = strchr(p,',')+1;
+    }
+
+    PDOP = atof(p);      
+
+    p = strchr(p, ',')+1;
+    HDOP = atof(p);         // dilution of precision - horizontal
+
+    p = strchr(p, ',')+1;
+    VDOP = atof(p);         // dilution of precision - vertical
+
     return true;
   }
   if (strstr(nmea, "$GPRMC")) {
