@@ -105,15 +105,17 @@ class Adafruit_GPS {
   void interruptReads(boolean r);
 
   boolean wakeup(void);
- boolean standby(void);
+  boolean standby(void);
 
   uint8_t hour, minute, seconds, year, month, day;
   uint16_t milliseconds;
   float latitude, longitude, geoidheight, altitude;
-  float speed, angle, magvariation, HDOP;
+  float speed, angle, magvariation, HDOP, VDOP, PDOP;
   char lat, lon, mag;
   boolean fix;
   uint8_t fixquality, satellites;
+  uint8_t 3dfix_type;
+  bool 3dfix_auto;
 
   boolean waitForSentence(char *wait, uint8_t max = MAXWAITSENTENCE);
   boolean LOCUS_StartLogger(void);
