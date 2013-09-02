@@ -107,13 +107,22 @@ class Adafruit_GPS {
   boolean wakeup(void);
   boolean standby(void);
 
+  // time and date
   uint8_t hour, minute, seconds, year, month, day;
   uint16_t milliseconds;
+  // position
   float latitude, longitude, geoidheight, altitude;
-  float speed, angle, magvariation, HDOP, VDOP, PDOP;
+  // velocity
+  float speed_kts, speed_kph, true_heading;
+  // other data
+  float magnetic_variation;
+  char magnetic_variation_direction;
+  // fix quality
+  float HDOP, VDOP, PDOP;
   char lat, lon, mag;
   boolean fix;
   uint8_t fixquality, satellites;
+  // other data
   uint8_t fix_dim;
   bool fix_dim_auto;
 
@@ -134,6 +143,5 @@ class Adafruit_GPS {
 #endif
   HardwareSerial *gpsHwSerial;
 };
-
 
 #endif

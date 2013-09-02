@@ -27,7 +27,8 @@ volatile boolean recvdflag;
 volatile boolean inStandbyMode;
 
 
-boolean Adafruit_GPS::parse(char *nmea) {
+boolean Adafruit_GPS::parse(char *nmea)
+{
   // do checksum check
 
   // first look if we even have one
@@ -37,10 +38,12 @@ boolean Adafruit_GPS::parse(char *nmea) {
     sum += parseHex(nmea[strlen(nmea)-2]);
     
     // check checksum 
-    for (uint8_t i=1; i < (strlen(nmea)-4); i++) {
+    for ( uint8_t i=1; i < (strlen(nmea)-4); i++) 
+    {
       sum ^= nmea[i];
     }
-    if (sum != 0) {
+    if (sum != 0) 
+    {
       // bad checksum :(
       //return false;
     }
@@ -115,7 +118,7 @@ boolean Adafruit_GPS::parse(char *nmea) {
     fix_dim = (uint8_t)atoi(p);
 
     // skip PRN of SVs
-    for(int i = 0; i <= 12; i++)
+    for(uint8_t i = 0; i <= 12; i++)
     {
       p = strchr(p,',')+1;
     }
@@ -130,7 +133,8 @@ boolean Adafruit_GPS::parse(char *nmea) {
 
     return true;
   }
-  if (strstr(nmea, "$GPRMC")) {
+  if (strstr(nmea, "$GPRMC")) 
+  {
    // found RMC
     char *p = nmea;
 
@@ -153,9 +157,17 @@ boolean Adafruit_GPS::parse(char *nmea) {
     else
       return false;
 
-    // parse out latitude
+    // parse out latitude and convert to decimal degrees
+    // latitude is written as ddmm.mmmm
+    //                        012345678
     p = strchr(p, ',')+1;
-    latitude = atof(p);
+    //latitude = atof(p);         // this is weird
+    char deg[3];
+    memcpy(deg, &p, 2);         // copy the first two bytes of p to deg
+    deg[2] = '\0';              // terminate string
+    latitude = atof(deg);       // store value
+    p+=2;                       // p now points to the first minutes digit
+    latitude+= (atof(p)/60.0f); // 1 minute = 1/60 of a degree (CAPTAIN OBVIOUS OUT!)
 
     p = strchr(p, ',')+1;
     if (p[0] == 'N') lat = 'N';
@@ -173,22 +185,51 @@ boolean Adafruit_GPS::parse(char *nmea) {
     else if (p[0] == ',') lon = 0;
     else return false;
 
-    // speed
+    // speed [knots]
     p = strchr(p, ',')+1;
-    speed = atof(p);
+    speed_kts = atof(p);
 
-    // angle
+    // true heading [degrees]
     p = strchr(p, ',')+1;
-    angle = atof(p);
+    true_heading = atof(p);
 
+    // date of fix
     p = strchr(p, ',')+1;
     uint32_t fulldate = atof(p);
     day = fulldate / 10000;
     month = (fulldate % 10000) / 100;
     year = (fulldate % 100);
 
+    // magnetic variation
+    p = strchr(p, ',')+1;
+    if(p[0]==',')
+    {
+      magnetic_variation = 0;
+      magnetic_variation_direction = 'N';
+    }
+    else
+    {
+      magnetic_variation = atof(p);  
+      p = strchr(p, ',')+1;
+      if (p[0]=='E')
+      {
+        magnetic_variation_direction = 'E';
+      }
+      else if (p[0]=='W')
+      {
+        magnetic_variation_direction = 'W';
+      }
+    }
+    
+
+
     // we dont parse the remaining, yet!
     return true;
+  }
+  if (strstr(nmea, "$GPVTG")) 
+  {
+    // found VTG
+    char *p = nmea;
   }
 
   return false;
@@ -267,11 +308,13 @@ void Adafruit_GPS::common_init(void) {
 
   hour = minute = seconds = year = month = day =
     fixquality = satellites = 0; // uint8_t
-  lat = lon = mag = 0; // char
+  lat = lon = mag = magnetic_variation_direction= 0; // char
   fix = false; // boolean
+  fix_dim_auto = true;  
+  fix_dim = 3;
   milliseconds = 0; // uint16_t
   latitude = longitude = geoidheight = altitude =
-    speed = angle = magvariation = HDOP = 0.0; // float
+    speed_kts = true_heading = magnetic_variation = HDOP = 0.0; // float
 }
 
 void Adafruit_GPS::begin(uint16_t baud)
@@ -301,7 +344,8 @@ char *Adafruit_GPS::lastNMEA(void) {
 }
 
 // read a Hex value and return the decimal equivalent
-uint8_t Adafruit_GPS::parseHex(char c) {
+uint8_t Adafruit_GPS::parseHex(char c) 
+{
     if (c < '0')
       return 0;
     if (c <= '9')
